@@ -1,26 +1,43 @@
 import numpy as np
 
-def calculate_entropy(csv_data: list) -> float:
-    n, m = csv_data.shape
-    total_entropy = 0
+def build_matrix(edges):
+    matrix = {}
+    
+    def update_count(index, column):
+        if index not in matrix:
+            matrix[index] = [0, 0, 0, 0, 0]
+        matrix[index][column] += 1
+    
+    for edge in edges:
+        high, low = map(int, edge.split(','))
+        high -= 1
+        low -= 1
+        
+        update_count(high, 0)
+        update_count(low, 1)
 
-    for i in range(n):
-        row_entropy = 0
+    for edge in edges:
+        high, low = map(int, edge.split(','))
+        high -= 1
+        low -= 1
+        
+        matrix[high][2] += matrix[low][0]
+        matrix[low][3] += matrix[high][1]
+        matrix[high][4] += matrix[low][0] - 1
 
-        for j in range(m):
-            if not csv_data[i, j]:
-                continue
+    return [matrix[i] for i in range(len(matrix))]
 
-            probability = csv_data[i, j] / n
-            row_entropy += probability * np.log2(probability)
-
-        total_entropy -= row_entropy
-
-    return total_entropy
-
-def task(csv_string: str) -> float:
-    csv_data = np.array([list(map(int, row.split(','))) for row in csv_string.strip().split('\n')])
-    return calculate_entropy(csv_data)
+def calculate_entropy(matrix):
+    n = len(matrix)
+    entropy = 0
+    for row in matrix:
+        for num in row:
+            p = num / (n - 1)
+            if p > 0:
+                entropy -= p * np.log2(p)
+    return round(entropy, 1)
 
 if __name__ == "__main__":
-    print(task("2,0,2,0,0\n0,1,0,0,1\n2,1,0,0,1\n0,1,0,1,1\n0,1,0,1,1"))
+    csv_data = build_matrix(["1,2","2,3","2,6","3,4","3,5"])
+    result = calculate_entropy(csv_data)
+    print(result)
